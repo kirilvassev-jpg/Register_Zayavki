@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Регистриране на заявка</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: #F0F2F5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.10); max-width: 560px; width: 100%; overflow: hidden; }
+  .card-header { background: #1E3A5F; padding: 24px 32px; }
+  .card-header h1 { color: #fff; font-size: 20px; font-weight: 800; }
+  .card-header p { color: #93C5FD; font-size: 12px; margin-top: 4px; }
+  .card-body { padding: 28px 32px; }
+  .form-group { margin-bottom: 18px; }
+  label { display: block; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  label span { color: #DC2626; margin-left: 2px; }
+  select, input[type="date"], input[type="text"] {
+    width: 100%; border: 1.5px solid #E2E8F0; border-radius: 8px;
+    padding: 10px 14px; font-size: 14px; color: #1E293B;
+    outline: none; transition: border 0.15s; background: #fff;
+    font-family: inherit;
+  }
+  select:focus, input:focus { border-color: #1E3A5F; box-shadow: 0 0 0 3px rgba(30,58,95,0.08); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .btn { width: 100%; background: #1E3A5F; color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 8px; transition: background 0.15s; }
+  .btn:hover { background: #163354; }
+  .btn:disabled { background: #93C5FD; cursor: not-allowed; }
+  .toast { display: none; margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-align: center; }
+  .toast.ok { background: #DCFCE7; color: #15803D; display: block; }
+  .toast.err { background: #FEE2E2; color: #DC2626; display: block; }
+  .required-note { font-size: 11px; color: #94A3B8; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <h1>📦 Регистриране на заявка</h1>
+    <p>Регистър Заявки — Логистика</p>
+  </div>
+  <div class="card-body">
+    <p class="required-note">Полетата маркирани с * са задължителни</p>
+
+    <div class="form-group">
+      <label>Направление / Дружество <span>*</span></label>
+      <select id="fDirection">
+        <option value="">— Изберете —</option>
+        <option>Инфраструктурно строителство</option>
+        <option>ВиК Строителство и поддръжка</option>
+        <option>Безизкопни технологии</option>
+        <option>Механизация и транспорт</option>
+        <option>РаТек ООД</option>
+        <option>Строителство на сгради и съоръжения</option>
+        <option>Стройкомерс Плевен</option>
+        <option>Администрация</option>
+        <option>Ар Си Дизайн</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Обект / Адрес <span>*</span></label>
+      <input type="text" id="fObject" placeholder="Въведете адрес или обект" />
+    </div>
+
+    <div class="grid2">
+      <div class="form-group">
+        <label>Краен срок за изпълнение <span>*</span></label>
+        <input type="date" id="fDeadline" />
+      </div>
+      <div class="form-group">
+        <label>Вид транспорт</label>
+        <select id="fTransport">
+          <option>Собствен</option>
+          <option>Външен</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Служител Логистика <span>*</span></label>
+      <select id="fStaff">
+        <option value="">— Изберете —</option>
+        <option>Димитрина Младенова</option>
+        <option>Йовко Иванов</option>
+        <option>Кирил Васев</option>
+        <option>Мария Козарева</option>
+        <option>Милен Медаров</option>
+        <option>Николай Динчов</option>
+        <option>Теменужка Стоянова</option>
+        <option>Христо Христов</option>
+      </select>
+    </div>
+
+    <button class="btn" id="submitBtn" onclick="submitForm()">Регистрирай заявката</button>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script>
+const FLOW_URL = "https://default0b822811c53c4f5e9444350c2fb3f9.35.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f2d0ed8079714888935f21d4ec1e6c36/triggers/manual/paths/invoke?api-version=1";
+
+function showToast(msg, type) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast " + type;
+  setTimeout(() => t.className = "toast", 4000);
+}
+
+async function getDigest() {
+  const r = await fetch(`${SITE_URL}/_api/contextinfo`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Accept": "application/json;odata=verbose" }
+  });
+  const d = await r.json();
+  return d.d.GetContextWebInformation.FormDigestValue;
+}
+
+async function submitForm() {
+  const direction = document.getElementById("fDirection").value;
+  const object    = document.getElementById("fObject").value.trim();
+  const deadline  = document.getElementById("fDeadline").value;
+  const transport = document.getElementById("fTransport").value;
+  const staff     = document.getElementById("fStaff").value;
+
+  if (!direction) { showToast("Изберете Направление / Дружество!", "err"); return; }
+  if (!object)    { showToast("Въведете Обект / Адрес!", "err"); return; }
+  if (!deadline)  { showToast("Въведете Краен срок за изпълнение!", "err"); return; }
+  if (!staff)     { showToast("Изберете Служител Логистика!", "err"); return; }
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "Регистриране...";
+
+  try {
+    const response = await fetch(FLOW_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        direction: direction,
+        object: object,
+        deadline: deadline,
+        transport: transport,
+        staff: staff
+      })
+    });
+
+    if (response.ok) {
+      showToast("✅ Заявката е регистрирана успешно!", "ok");
+      document.getElementById("fDirection").value = "";
+      document.getElementById("fObject").value = "";
+      document.getElementById("fDeadline").value = "";
+      document.getElementById("fTransport").value = "Собствен";
+      document.getElementById("fStaff").value = "";
+    } else {
+      showToast("Грешка при регистрирането. Опитайте отново.", "err");
+    }
+  } catch(e) {
+    showToast("Грешка: " + e.message, "err");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Регистрирай заявката";
+}
+</script>
+</body>
+</html>
